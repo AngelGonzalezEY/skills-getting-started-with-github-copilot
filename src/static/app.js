@@ -83,4 +83,54 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize app
   fetchActivities();
+  // Render activities with a pretty participants section
+  function renderActivities(activities) {
+    const activitiesList = document.getElementById('activities-list');
+    activitiesList.innerHTML = '';
+    activities.forEach(activity => {
+      const card = document.createElement('div');
+      card.className = 'activity-card';
+
+      // Activity title
+      const title = document.createElement('h4');
+      title.textContent = activity.name;
+      card.appendChild(title);
+
+      // Activity description
+      if (activity.description) {
+        const desc = document.createElement('p');
+        desc.textContent = activity.description;
+        card.appendChild(desc);
+      }
+
+      // Participants section
+      const participantsSection = document.createElement('div');
+      participantsSection.className = 'participants-section';
+
+      const participantsTitle = document.createElement('h5');
+      participantsTitle.textContent = 'Participants';
+      participantsSection.appendChild(participantsTitle);
+
+      const participantsList = document.createElement('ul');
+      participantsList.className = 'participants-list';
+
+      if (activity.participants && activity.participants.length > 0) {
+        activity.participants.forEach(participant => {
+          const li = document.createElement('li');
+          li.textContent = participant;
+          participantsList.appendChild(li);
+        });
+      } else {
+        const li = document.createElement('li');
+        li.textContent = 'No participants yet.';
+        li.style.fontStyle = 'italic';
+        participantsList.appendChild(li);
+      }
+
+      participantsSection.appendChild(participantsList);
+      card.appendChild(participantsSection);
+
+      activitiesList.appendChild(card);
+    });
+  }
 });
