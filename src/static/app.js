@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Clear loading message
       activitiesList.innerHTML = "";
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
@@ -20,6 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft = details.max_participants - details.participants.length;
 
+        // Activity info
         activityCard.innerHTML = `
           <h4>${name}</h4>
           <p>${details.description}</p>
@@ -27,6 +29,69 @@ document.addEventListener("DOMContentLoaded", () => {
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
         `;
 
+        // Participants section
+        const participantsSection = document.createElement("div");
+        participantsSection.className = "participants-section";
+
+        const participantsTitle = document.createElement("h5");
+        participantsTitle.textContent = "Participants:";
+        participantsSection.appendChild(participantsTitle);
+
+        const ul = document.createElement("ul");
+        ul.className = "participants-list";
+        ul.style.listStyleType = "none";
+        ul.style.paddingLeft = "0";
+
+        details.participants.forEach((email) => {
+          const li = document.createElement("li");
+          li.style.display = "flex";
+          li.style.alignItems = "center";
+
+          const span = document.createElement("span");
+          span.textContent = email;
+          span.style.flexGrow = "1";
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.innerHTML = "🗑️";
+          deleteBtn.title = "Unregister participant";
+          deleteBtn.style.marginLeft = "8px";
+          deleteBtn.style.background = "none";
+          deleteBtn.style.border = "none";
+          deleteBtn.style.cursor = "pointer";
+          deleteBtn.style.fontSize = "1em";
+          deleteBtn.setAttribute("aria-label", "Delete participant");
+
+          deleteBtn.addEventListener("click", async () => {
+            if (!confirm(`Unregister ${email} from ${name}?`)) return;
+            try {
+              const res = await fetch(`/activities/${encodeURIComponent(name)}/unregister?email=${encodeURIComponent(email)}`, {
+                method: "POST"
+              });
+              const result = await res.json();
+              if (res.ok) {
+                fetchActivities();
+                messageDiv.textContent = result.message || "Participant unregistered.";
+                messageDiv.className = "success";
+              } else {
+                messageDiv.textContent = result.detail || "Failed to unregister participant.";
+                messageDiv.className = "error";
+              }
+              messageDiv.classList.remove("hidden");
+              setTimeout(() => messageDiv.classList.add("hidden"), 5000);
+            } catch (err) {
+              messageDiv.textContent = "Failed to unregister participant.";
+              messageDiv.className = "error";
+              messageDiv.classList.remove("hidden");
+            }
+          });
+
+          li.appendChild(span);
+          li.appendChild(deleteBtn);
+          ul.appendChild(li);
+        });
+
+        participantsSection.appendChild(ul);
+        activityCard.appendChild(participantsSection);
         activitiesList.appendChild(activityCard);
 
         // Add option to select dropdown
@@ -62,6 +127,8 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        // Refresh activities list to show new participant
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
@@ -83,54 +150,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize app
   fetchActivities();
-  // Render activities with a pretty participants section
-  function renderActivities(activities) {
-    const activitiesList = document.getElementById('activities-list');
-    activitiesList.innerHTML = '';
-    activities.forEach(activity => {
-      const card = document.createElement('div');
-      card.className = 'activity-card';
-
-      // Activity title
-      const title = document.createElement('h4');
-      title.textContent = activity.name;
-      card.appendChild(title);
-
-      // Activity description
-      if (activity.description) {
-        const desc = document.createElement('p');
-        desc.textContent = activity.description;
-        card.appendChild(desc);
-      }
-
-      // Participants section
-      const participantsSection = document.createElement('div');
-      participantsSection.className = 'participants-section';
-
-      const participantsTitle = document.createElement('h5');
-      participantsTitle.textContent = 'Participants';
-      participantsSection.appendChild(participantsTitle);
-
-      const participantsList = document.createElement('ul');
-      participantsList.className = 'participants-list';
-
-      if (activity.participants && activity.participants.length > 0) {
-        activity.participants.forEach(participant => {
-          const li = document.createElement('li');
-          li.textContent = participant;
-          participantsList.appendChild(li);
-        });
-      } else {
-        const li = document.createElement('li');
-        li.textContent = 'No participants yet.';
-        li.style.fontStyle = 'italic';
-        participantsList.appendChild(li);
-      }
-
-      participantsSection.appendChild(participantsList);
-      card.appendChild(participantsSection);
-
-      activitiesList.appendChild(card);
-    });
-  }
 });
